@@ -85,15 +85,119 @@ var modifierMap;
 const _handlers = {};
 let downKeys = [];
 let handleKeys = [];
-const hotkeys = ({ keys, scope = document.body, handle }) => {
-    handleKeys = keys.slice(0);
-    scope.addEventListener('keydown', (e) => {
-        downKey(e, handle);
+class Param {
+    constructor(param) {
+        this.keys = [];
+        this.scope = document.body;
+        this.handleEvent = [];
+        this.current = 0;
+        this.downKey = (e, handle) => {
+            let key = parseInt((e.keyCode || e.charCode || e.which || e.code) + '');
+            if (e.type == 'keydown' && this.keys[this.current] === _keyMap[key]) {
+                downKeys.push(_keyMap[key]);
+                if (current == this.keys.length - 1 && downKeys.length == this.keys.length) {
+                    this.current += 1;
+                    handle();
+                    return;
+                }
+                else {
+                    console.log('落---》', current);
+                    this.current += 1;
+                }
+            }
+        };
+        this.upKey = (e) => {
+            let key = parseInt((e.keyCode || e.charCode || e.which || e.code) + '');
+            let enuKey = _keyMap[key];
+            if (e.type == 'keyup' && downKeys.indexOf(enuKey) != -1) {
+                this.current -= 1;
+                console.log('起---》', current);
+                const i = downKeys.indexOf(enuKey);
+                downKeys.splice(i, 1);
+            }
+        };
+        this.keys = param.keys;
+        this.scope = this.scope;
+        this.handleEvent.push(param.handle);
+        this.init();
+    }
+    init() {
+        this.scope.onkeydown = (e) => {
+            for (let handle of this.handleEvent) {
+                this.downKey(e, handle);
+            }
+        };
+        this.scope.onkeyup = (e) => {
+            this.upKey(e);
+        };
+    }
+}
+function x(param) {
+    let handleKeys = param.keys;
+    let handle = param.handle;
+    let currentIndex = 0;
+    const handledownKey = (e) => {
+        let key = parseInt((e.keyCode || e.charCode || e.which || e.code) + '');
+        if (e.type == 'keydown' && handleKeys[currentIndex] === _keyMap[key]) {
+            downKeys.push(_keyMap[key]);
+            if (currentIndex == handleKeys.length - 1 && downKeys.length == handleKeys.length) {
+                currentIndex = 0;
+                handle();
+                return;
+            }
+            else {
+                console.log('落---》', currentIndex);
+                currentIndex += 1;
+            }
+        }
+    };
+    const handleupKey = (e) => {
+        let key = parseInt((e.keyCode || e.charCode || e.which || e.code) + '');
+        let enuKey = _keyMap[key];
+        if (e.type == 'keyup' && handleKeys.indexOf(enuKey) != -1) {
+            if (current > 0) {
+                currentIndex -= 1;
+            }
+            console.log('起---》', currentIndex);
+        }
+    };
+    return [handledownKey, handleupKey];
+}
+function y() {
+    let handleEvent = [];
+    function m(e) {
+        for (let men of handleEvent) {
+            men(e);
+        }
+    }
+    function n(fn) {
+        handleEvent.push(fn);
+    }
+    return [n, m];
+}
+const [p, q] = [() => { }, '1'];
+const hotkeys = ({ scope = document.body, options }) => {
+    const [handleDownListPush, handleDownList] = y();
+    const [handleUpListPush, handleUpList] = y();
+    for (let param of options) {
+        init(param, handleDownListPush, handleUpListPush);
+    }
+    scope === null || scope === void 0 ? void 0 : scope.addEventListener('keydown', (e) => {
+        handleDownList(e);
     });
     // scope.onkeydown =(e)=> downKey(e,handle)
-    scope.addEventListener('keyup', (e) => {
-        upKey(e);
+    scope === null || scope === void 0 ? void 0 : scope.addEventListener('keyup', (e) => {
+        handleUpList(e);
+        let key = parseInt((e.keyCode || e.charCode || e.which || e.code) + '');
+        let enuKey = _keyMap[key];
+        const i = downKeys.indexOf(enuKey);
+        downKeys.splice(i, 1);
     });
+};
+const init = (param, handleDownListPush, handleUpListPush) => {
+    const [getdownkey, getupkey] = x(param);
+    handleDownListPush(getdownkey);
+    handleUpListPush(getupkey);
 };
 let current = 0;
 const downKey = (e, handle) => {
@@ -121,5 +225,4 @@ const upKey = (e) => {
         downKeys.splice(i, 1);
     }
 };
-console.log('123');
 window['hotkey'] = hotkeys;

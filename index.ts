@@ -92,21 +92,157 @@ let downKeys:Key[] = []
 let handleKeys:Key[] = []
 type Handle = ()=>any
 
-interface IParams  {
-    keys:Key[],
-    scope?:HTMLElement,
-    handle:Handle
+
+
+
+
+class Param{
+    public keys:Key[]=[]
+    public scope:HTMLElement = document.body
+    public handleEvent:Handle[]=[]
+    private current = 0
+
+    constructor(param:Option){
+        this.keys = param.keys
+        this.scope = this.scope
+        this.handleEvent.push(param.handle)
+        this.init()
+    }
+
+    private init(){
+        this.scope.onkeydown = (e)=>{
+            for(let handle of this.handleEvent){
+                this.downKey(e,handle)
+            }
+        }
+        this.scope.onkeyup = (e)=>{
+               this.upKey(e)    
+        }
+    }
+
+    private  downKey = (e:KeyboardEvent,handle:Handle)=>{
+        let key = parseInt((e.keyCode||e.charCode||e.which||e.code)+'')
+          if(e.type=='keydown'&& this.keys[this.current]===_keyMap[key]){
+              downKeys.push(_keyMap[key] as Key)
+              if(current == this.keys.length-1&&downKeys.length==this.keys.length){
+                  this.current+=1
+                
+                  handle()
+                  return
+              }else{
+              console.log('落---》',current);
+                  
+                 this.current+=1
+              }      
+          }   
+      }
+
+    private  upKey = (e:KeyboardEvent)=>{
+        let key = parseInt((e.keyCode||e.charCode||e.which||e.code)+'')
+        let enuKey = _keyMap[key] as Key
+        if(e.type=='keyup'&&downKeys.indexOf(enuKey)!=-1){
+           this.current-=1
+            console.log('起---》',current);
+            
+            const i = downKeys.indexOf(enuKey)
+            downKeys.splice(i,1)
+        } 
+    }
+
 }
 
-const hotkeys = ({keys, scope=document.body,handle}:IParams)=>{
-    handleKeys = keys.slice(0)
-    scope.addEventListener('keydown',(e)=>{
-        downKey(e,handle)
+type getDowmKey = (e:KeyboardEvent)=>any
+
+function x(param:Option){
+    let handleKeys = param.keys
+    let handle = param.handle
+    let currentIndex=0
+    const  handledownKey = (e:KeyboardEvent)=>{
+        let key = parseInt((e.keyCode||e.charCode||e.which||e.code)+'')
+          if(e.type=='keydown'&& handleKeys[currentIndex]===_keyMap[key]){
+              downKeys.push(_keyMap[key] as Key)
+              if(currentIndex == handleKeys.length-1&&downKeys.length==handleKeys.length){
+                currentIndex=0
+                
+                  handle()
+                  return
+              }else{
+              console.log('落---》',currentIndex);
+                  
+              currentIndex+=1
+              }      
+          }   
+      }
+      const handleupKey = (e:KeyboardEvent)=>{
+        let key = parseInt((e.keyCode||e.charCode||e.which||e.code)+'')
+        let enuKey = _keyMap[key] as Key
+        if(e.type=='keyup'&&handleKeys.indexOf(enuKey)!=-1){
+           if(current>0){
+            currentIndex-=1
+           }
+            console.log('起---》',currentIndex);
+        } 
+    }
+
+    return [handledownKey,handleupKey]
+}
+
+function y():[n,m]{
+    let handleEvent:getDowmKey[] = []
+    function m (e:KeyboardEvent){
+        for(let men of handleEvent){
+            men(e)
+        }
+    }
+
+    function n(fn:getDowmKey){
+    handleEvent.push(fn)
+        
+    }
+
+    return [n,m]
+}
+
+
+interface Option{
+    handle:Handle,
+    keys:Key[],
+
+}
+interface IParams  {
+    scope?:HTMLElement,
+    options:Option[]
+}
+
+type m = (e:KeyboardEvent)=>void
+type n = (key:getDowmKey)=>void
+
+const  [p,q] = [()=>{},'1']
+
+const hotkeys = ({scope=document.body,options}:IParams)=>{
+     const [handleDownListPush, handleDownList]=y()
+     const [handleUpListPush, handleUpList]=y()
+    for(let param of options){
+        init(param,handleDownListPush,handleUpListPush)
+    }
+    scope?.addEventListener('keydown',(e)=>{
+        handleDownList(e)
     })
     // scope.onkeydown =(e)=> downKey(e,handle)
-    scope.addEventListener('keyup',(e)=>{
-        upKey(e)
+    scope?.addEventListener('keyup',(e)=>{
+        handleUpList(e)
+        let key = parseInt((e.keyCode||e.charCode||e.which||e.code)+'')
+        let enuKey = _keyMap[key] as Key
+        const i = downKeys.indexOf(enuKey)
+        downKeys.splice(i,1)
     })
+}
+
+const init = (param:Option,handleDownListPush:any,handleUpListPush:any)=>{
+    const [getdownkey, getupkey] = x(param)
+    handleDownListPush(getdownkey)
+    handleUpListPush(getupkey)
+ 
 }
 
 let current:number = 0
@@ -140,7 +276,6 @@ const upKey = (e:KeyboardEvent)=>{
         downKeys.splice(i,1)
     } 
 }
-console.log('123');
 
 (window as any)['hotkey'] = hotkeys
 
